@@ -1,8 +1,9 @@
 import requests
 import os
 import json
-import config
+import config #local file which contains all the secret keys
 import re
+import mysql.connector
 
 bearer_token = config.BEARER_TOKEN
 
@@ -28,25 +29,46 @@ def connect_to_endpoint(url, params):
         raise Exception(response.status_code, response.text)
     return response.json()
 
+def db_connect():
+    mydb = mysql.connector.connect(
+    host="localhost",
+    user="sri",
+    password="Twittermusic1!",
+    database="twitter_music"
+    )
+    return mydb
+
+def get_historical_tweets():
+        json_response = connect_to_endpoint(search_url, query_params)
+        data_list = []
+        for x in range(len(json_response['data'])):
+            data = {}
+            data['author_id'] = json_response['data'][x]['author_id']
+            data['tweet_id'] = json_response['data'][x]['id']
+            text = json_response['data'][x]['text']
+            str_en = text.encode("ascii", "ignore")
+            str_de = str_en.decode()
+            retweet_check = re.match("RT +@[^ :]+:?", str_de)
+            match = re.findall("(?<=\:)(.*)", str_de)
+            text_raw = match[0]
+            data['text'] = " ".join(text_raw.split())
+            data['retweet']=bool(retweet_check)
+            print(json.dumps(data, indent=4, sort_keys = True))
+            data_list.append(data)
+        save_to_db('justin_bieber',data_list)    
+
+def save_to_db (table_name, data_list):
+    db_cnx = db_connect()
+    db_cur = db_cnx.cursor()
+    column_names = ", ".join(data_list[0].keys())
+    column_values = '%(' + ')s, %('.join(data_list[0].keys())+')s'
+    db_cur.executemany (f'INSERT INTO {table_name} ({column_names}) values ({column_values})', data_list)
+    db_cnx.commit()
+    
 def main():
-    json_response = connect_to_endpoint(search_url, query_params)
-    for x in range(len(json_response['data'])):
-        author_id = json_response['data'][x]['author_id']
-        tweet_id = json_response['data'][x]['id']
-        text = json_response['data'][x]['text']
-        str_en = text.encode("ascii", "ignore")
-        str_de = str_en.decode()
-        retweet_check = re.match("RT +@[^ :]+:?", str_de)
-        match = re.findall("(?<=\:)(.*)", str_de)
-        text_raw = match[0]
-        text = " ".join(text_raw.split())
-        retweet=bool(retweet_check)
-        print('Author ID: ',author_id)
-        print('Tweet ID: ',tweet_id)
-        print('Is Retweet: ', retweet)
-        print('Final Text: ', text)
-        #if retweet is True:
-    print(json_response['meta']['next_token'])
+    get_historical_tweets()
+    #print(json_response['meta']['next_token'])
+   # db_cnx.close()
     #print(json.dumps(json_response, indent=4, sort_keys=True))
 
 if __name__ == "__main__":
