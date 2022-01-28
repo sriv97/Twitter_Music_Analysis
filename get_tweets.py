@@ -12,7 +12,7 @@ bearer_token = config.BEARER_TOKEN
 search_url = "https://api.twitter.com/2/tweets/search/recent"
 
 #default query params to get first pagination of data
-query_params = {'query': 'justin bieber music','tweet.fields': 'author_id,created_at,text','max_results':10}
+query_params = {'query': 'justin bieber music','tweet.fields': 'author_id,created_at,text','max_results':50}
 
 #query params payload for a recursive call
 query_params_recursive = {
