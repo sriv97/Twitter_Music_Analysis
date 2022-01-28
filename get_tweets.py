@@ -68,7 +68,7 @@ def get_initial_tweets():
 
 def get_recursive_tweets(token):
     query_params_recursive['next_token']=token
-    if len(data_list) == 20:
+    if len(data_list) == 300:
         f = open("next_token.txt", "w")
         f.write(str(token))
         f.close()
