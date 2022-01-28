@@ -11,7 +11,7 @@ search_url = "https://api.twitter.com/2/tweets/search/recent"
 
 # Optional params: start_time,end_time,since_id,until_id,max_results,next_token,
 # expansions,tweet.fields,media.fields,poll.fields,place.fields,user.fields
-query_params = {'query': 'justin bieber music','tweet.fields': 'author_id'}
+query_params = {'query': 'justin bieber music','tweet.fields': 'author_id,created_at,text','max_results':10}
 
 def bearer_oauth(r):
     """
@@ -49,10 +49,15 @@ def get_historical_tweets():
             str_en = text.encode("ascii", "ignore")
             str_de = str_en.decode()
             retweet_check = re.match("RT +@[^ :]+:?", str_de)
-            match = re.findall("(?<=\:)(.*)", str_de)
-            text_raw = match[0]
-            data['text'] = " ".join(text_raw.split())
+            if retweet_check:
+                match = re.findall("(?<=\:)(.*)", str_de)
+                text_raw = match[0]
+                data['text'] = " ".join(text_raw.split())
+            else:
+                data['text'] = str_de
             data['retweet']=bool(retweet_check)
+            date_time = re.findall("[^Z]*",json_response['data'][x]['created_at'])
+            data['created_at']= date_time[0]
             print(json.dumps(data, indent=4, sort_keys = True))
             data_list.append(data)
         save_to_db('justin_bieber',data_list)    
