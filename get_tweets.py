@@ -4,7 +4,7 @@ import json
 import config #local file which contains all the secret keys
 import re
 import mysql.connector
-from time import sleep
+import time
 
 
 bearer_token = config.BEARER_TOKEN
@@ -12,13 +12,17 @@ bearer_token = config.BEARER_TOKEN
 search_url = "https://api.twitter.com/2/tweets/search/recent"
 
 #default query params to get first pagination of data
-query_params = {'query': 'justin bieber music','tweet.fields': 'author_id,created_at,text','max_results':50}
+query_params = {
+    'query': 'justin bieber music',
+    'tweet.fields': 'author_id,created_at,text',
+    'max_results':50
+}
 
 #query params payload for a recursive call
 query_params_recursive = {
     "query": "justin bieber music",
     "tweet.fields": "author_id,created_at,text",
-    "max_results": 10,
+    "max_results": 50,
     "next_token": None,
 }
 
@@ -73,6 +77,12 @@ def get_recursive_tweets(token):
         f.write(str(token))
         f.close()
         save_to_db('justin_bieber',data_list)
+        print("We now reached our API Limit, waiting for 15 min")
+        i = 0
+        while i < 15: #
+            time.sleep(60)
+            print("Minutes Left till next run: ", i)
+            i -= 1
     else:
         json_response = connect_to_endpoint(search_url, query_params)
         create_dictionary(json_response)
@@ -104,6 +114,7 @@ def create_dictionary(json_response):
         file_exists = os.path.exists('next_token.txt')
         if file_exists:
             os.remove("next_token.txt")
+            exit() #this exit happens if there are no more next_tokens present
 
 def main():
     file_exists = os.path.exists('next_token.txt') #check if file already exists
